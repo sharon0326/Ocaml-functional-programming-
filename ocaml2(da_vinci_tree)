@@ -1,0 +1,267 @@
+let notimplemented () =
+    failwith "This function is not yet implemented."
+
+type dist_unit = Foot | Meter | Mile
+type time_unit = Second | Hour
+type speed_unit = dist_unit * time_unit
+type 'a value = 'a * float
+
+type tree = Branch of float * tree list | Leaf
+
+let tree_example = 
+	Branch (5., [
+		Branch (3., [Leaf; Leaf; Leaf]);
+		Leaf;
+		Branch (4., [])
+	])
+;;
+
+(* Section 1 : Lists *)
+
+(* Question 1.1 : Most common element of *sorted* list *)
+
+let mode_tests: (int list * int) list = [([0;1;1;1;2],1);
+                                         ([2;2;1],2);
+                                         ([2],2);
+                                         ([1;2],1);
+                                         ([2;2;2;3],2); 
+                                         ([4;3;2;4],4);
+                                         ([0;1;2;3;4],0);
+                                         ([1;0;1;2;2;3;4],1); 
+                                        ] ;; 
+let mode (l: 'a list) : 'a= 
+  match l with
+  | [] -> failwith "Undefined input." 
+  | _ ->
+      let rec aux l ((cur_el, cur_num) : 'a * int ) ((max_el, max_num) : 'a * int) =
+        match l with
+        | [] -> if cur_num > max_num 
+            then cur_el else max_el
+        | x :: xs  -> 
+            if x =  cur_el 
+            then aux xs (cur_el, cur_num+1) (max_el,max_num)
+            else if cur_num > max_num
+            then aux xs (x, 1) (cur_el,cur_num)
+            else aux xs (x, 1) (max_el,max_num)
+      in 
+      match List.sort compare l with
+      | [] -> List.hd(l)
+      | x::xs -> aux xs (x, 1) (x, 0) ;;
+(*aux l (List.hd(l),1) (List.hd(l), 0);;*) 
+(*
+  match List.sort compare l with
+  | [] -> l.hd
+  | hd::xs -> aux xs (l.hd, 1) (l.hd, 0) ;;*)
+
+
+(* Question 1.2 : Most common consecutive pairing *)
+let pair_mode_tests: (int list * (int * int) ) list = [([1;2;3;5;6;2;3],(2,3));
+                                                       ([1;2;3;4;5;6],(1,2));
+                                                       ([1;2],(1,2));
+                                                       ([1;2;4;3;1;2],(1,2));
+                                                       ([1;2;1;2;1],(1,2));
+                                                       ([2;1;2;1;2;1],(2,1))
+                                                      ];;
+
+let rec len (l: 'a list) : int = 
+  match l with
+  | [] -> 0 
+  | x::xs -> 1 + len xs;;
+
+let rec separate xs =
+  match xs with
+  | x::y::tail ->
+      let a,b = separate tail in
+      x::a, y::b
+  | x::[] -> [x],[]
+  | [] -> [],[];;
+
+let rec remove_at n = function
+  | [] -> []
+  | h :: t -> if n = 0 then t else h :: remove_at (n - 1) t;; 
+
+let rec merge a b = match (a,b) with
+  | (x::xs), (y::ys) -> x::y::merge xs ys
+  | xs,[] -> xs
+  | [],ys -> ys;; 
+
+let pair_mode (l: 'a list) : 'a * 'a= 
+  let lenofl = len l in
+  match lenofl with
+  | 0 -> failwith "Undefined input." 
+  | 1 -> failwith "Undefined input." 
+  | _ -> 
+      if lenofl mod 2 =1
+      then let getFirst (a,b) =a in 
+        let getSecond (a,b) =b in 
+        let tup1 = separate l in 
+        let sub1 = getFirst (tup1) in 
+        let sub2 = getSecond (tup1) in 
+        let temp = sub1 in 
+        let sub1 = remove_at 0 sub1 in 
+        let final1 = List.combine sub2 sub1  in 
+        let temp = remove_at  (len temp -1)  temp in
+        let final2 = List.combine temp sub2  in 
+        let final =  merge final1 final2 in 
+        mode final
+
+      else
+        let getFirst (a,b) =a in
+        let getSecond (a,b) =b in 
+        let temp  = l in 
+        let tup1 = separate l in 
+        let sub1 = getFirst (tup1) in 
+        let sub2 = getSecond (tup1) in 
+        let final1 = List.combine sub1 sub2  in 
+        let temp = remove_at 0 temp in 
+        let temp = remove_at (lenofl-2) temp in 
+        let tup2 = separate temp in 
+        let subbb1 = getFirst (tup2) in 
+        let subbb2 = getSecond (tup2) in 
+        let final2 = List.combine subbb1 subbb2  in 
+        let final =  merge final1 final2 in 
+        mode final;; 
+
+(*
+(* Question 1.2 : Most common consecutive pairing *)
+
+  let pair_mode_tests: (int list * (int * int) ) list = [] ;;
+
+  let pair_mode (l: 'a list) : 'a * 'a = 
+    notimplemented ()
+  ;;*)
+
+
+(* Section 2 : Custom data types *)
+
+let convert_time ((from_unit, val_) : time_unit value) to_unit : time_unit value =
+  match from_unit with
+  | Second -> if   to_unit= Second then (  to_unit , val_)
+      else (  to_unit ,val_ /. 3600. )
+  | Hour -> if  to_unit = Hour then ( to_unit ,val_)
+      else ( to_unit ,val_ *. 3600.) ;;
+
+let convert_dist ((from_unit, val_) : dist_unit value) to_unit : dist_unit value =
+  match from_unit with
+  | Foot -> if   to_unit= Meter then (  to_unit ,val_ *. 0.3048 ) 
+      else if  to_unit = Mile then ( to_unit ,val_ /. 5280.) 
+      else ( to_unit ,val_)
+  | Meter  -> if  to_unit = Foot then ( to_unit ,val_ /. 0.3048)
+      else if  to_unit = Mile then ( to_unit ,val_ *. 0.000621371192)
+      else  ( to_unit ,val_)
+  | Mile  -> if  to_unit = Meter then ( to_unit ,val_ *. 1609.344) 
+      else if  to_unit = Foot then  ( to_unit ,val_ *. 5280.)
+      else ( to_unit ,val_)   ;;  
+
+let get_tupleb(_,b) = b;;
+let get_tuplea(a,_) = a;; 
+
+let convert_speed ((from_unit, val_) : speed_unit value) to_unit : speed_unit value = 
+  let from_time = get_tupleb from_unit in
+  let tup1 = to_unit in 
+  let to_time = get_tupleb tup1 in
+  let converted = convert_time (to_time, 1.) from_time in
+  let converted_timename =  get_tupleb converted in
+  let time_frac = get_tupleb converted in
+  
+  let converted_dis =   time_frac *. val_ in
+  let ori_dis = get_tuplea from_unit in
+  let converted_disname = get_tuplea (to_unit) in
+  let final = convert_dist (get_tuplea from_unit, converted_dis) converted_disname in
+  
+  let final_num = get_tupleb final in
+  (( to_unit), final_num) ;; 
+
+let add_speed (a : speed_unit value) ((b_unit, b_val) : speed_unit value) : speed_unit value = 
+  let converteda = convert_speed a b_unit in
+  let first = get_tupleb converteda in
+  (b_unit, b_val +. first) 
+;;
+
+let dist_traveled time ((speed_unit, speed_val) : speed_unit value) : dist_unit value = 
+  let final_timename =  get_tupleb speed_unit in
+  let numconvertedtime = get_tupleb(convert_time time final_timename) in
+  let ori_dis =  numconvertedtime *. speed_val in
+  let final_disname = get_tuplea speed_unit in
+  final_disname, ori_dis;;
+
+(*
+let dist_traveled time ((speed_unit, speed_val) : speed_unit value) : dist_unit value = 
+  notimplemented ()
+;;*)
+
+(*Section 3 : recursive data types/induction *)
+
+let passes_da_vinci_tests : (tree * bool) list = 
+  [(Branch (5., [
+       Branch (3., [Leaf; Leaf; Leaf]);
+       Leaf;
+       Branch (4., [])
+     ]), true);
+   (Leaf,true);
+   (Branch (5., [ 
+        Branch (4., [])
+      ]), true);
+   (Branch (0., [
+        Branch (3., [Leaf; Leaf; Leaf]);
+        Leaf;
+        Branch (4., [])
+      ]), false);
+   (Branch (4., [ 
+        Leaf;
+        Branch (4., [])
+      ]), true);
+  ] ;;
+
+let rec sum_up  work tree = 
+  match tree with 
+  | Leaf -> work
+  | Branch (w,trees) -> List.fold_left sum_up (work +. w *. w) trees;; 
+(*
+  let rec traverse3  work tree  = 
+    match tree with 
+    | Leaf -> true
+    | Branch (w,trees) -> 
+        let sub = Branch (0.,trees) in 
+        let result  = sum_up 0. sub in
+        if w *. w >= result 
+        then true
+        else false ;;
+*)
+let rec traverse3  work tree  = 
+  match tree with 
+  | Leaf -> true
+  | Branch (w,trees) -> 
+      let sub = Branch (0.,trees) in 
+      let result  = sum_up 0. sub in
+      if w *. w >= result 
+      then
+        if len trees != 0
+        then
+          let newsub = List.nth trees 0 in
+          traverse3  work newsub 
+        else true
+           (*then true*)
+      else false ;;
+
+let rec passes_da_vinci t = traverse3 0. t;;
+
+let ex =
+  (Branch (17.4445773441247489,
+           [Branch (3.43462299216136,
+                    [Branch (0.236436889887767288, [Leaf; Leaf]); Leaf;
+                     Branch (3.66399823447992734, [Leaf; Leaf; Leaf]); Leaf])]
+          ));;
+passes_da_vinci ex;;
+
+let ex2 = 
+  (Branch (65.0032098310899187,
+           [Branch (2.71827345538800236,
+                    [Branch (1.48721963379711397, [Leaf; Leaf; Leaf]);
+                     Branch (0.78492855843611764, [Leaf])]);
+            Branch (56.9028916652587071,
+                    [Branch (17.0843328374204297, [Leaf; Leaf; Leaf; Leaf]); Leaf;
+                     Branch (42.2803710033402496, [Leaf; Leaf; Leaf])])]));;
+
+passes_da_vinci ex2;;
+sum_up 0. ex2;;
