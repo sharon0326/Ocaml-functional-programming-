@@ -16,9 +16,7 @@ let tree_example =
 	])
 ;;
 
-(* Section 1 : Lists *)
-
-(* Question 1.1 : Most common element of *sorted* list *)
+(* TODO Most common element of *sorted* list *)
 
 let mode_tests: (int list * int) list = [([0;1;1;1;2],1);
                                          ([2;2;1],2);
@@ -54,7 +52,7 @@ let mode (l: 'a list) : 'a=
   | hd::xs -> aux xs (l.hd, 1) (l.hd, 0) ;;*)
 
 
-(* Question 1.2 : Most common consecutive pairing *)
+(* TODO : Most common consecutive pairing *)
 let pair_mode_tests: (int list * (int * int) ) list = [([1;2;3;5;6;2;3],(2,3));
                                                        ([1;2;3;4;5;6],(1,2));
                                                        ([1;2],(1,2));
@@ -123,7 +121,7 @@ let pair_mode (l: 'a list) : 'a * 'a=
         mode final;; 
 
 (*
-(* Question 1.2 : Most common consecutive pairing *)
+(*TODO: Most common consecutive pairing *)
 
   let pair_mode_tests: (int list * (int * int) ) list = [] ;;
 
@@ -132,7 +130,6 @@ let pair_mode (l: 'a list) : 'a * 'a=
   ;;*)
 
 
-(* Section 2 : Custom data types *)
 
 let convert_time ((from_unit, val_) : time_unit value) to_unit : time_unit value =
   match from_unit with
@@ -190,7 +187,7 @@ let dist_traveled time ((speed_unit, speed_val) : speed_unit value) : dist_unit 
   notimplemented ()
 ;;*)
 
-(*Section 3 : recursive data types/induction *)
+(*TODO: recursive data types/induction *)
 
 let passes_da_vinci_tests : (tree * bool) list = 
   [(Branch (5., [
