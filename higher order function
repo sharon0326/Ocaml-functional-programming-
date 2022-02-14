@@ -110,10 +110,6 @@ let g10 = fun y -> 100 + y ;;
 *)
 
 
-(* Question 1 *)
-
-(* Inner rec helper - may do something different *)
-
 let rec cross_map f l1 l2 = 
   let rec map e = function
     | [] -> []
@@ -126,7 +122,6 @@ let rec cross_map f l1 l2 =
 ;;
 
 
-(*  with explicit type annotations *)
 let rec cross_map (f : 'a -> 'b -> 'c)  (l1 : 'a list) (l2 : 'b list)  : 'c list = 
   let rec map e = function
     | [] -> []
@@ -157,19 +152,14 @@ let l2 = [4; 5; 6];;
 cross_map (fun x y -> 100 * x + y) l1 l2 ;;
 
 
-(* Question 2 *)
-
 type 'a bintree = X | Node of 'a bintree * 'a * 'a bintree ;; 
 
-
-(* without leveraging partial evaluation *)
 let rec map t  = fun f ->
   match t with 
   | X -> X
   | Node (l, v, r) -> Node (map l f, f v, map r f)
 ;;
 
-(* leveraging partial evaluation by delaying the application of function f *)
 let rec map t  = (* fun f -> *) (* remove this at the beginning and use it as late as possible *)
   match t with 
   | X -> fun f -> X (*  we reach the base case and cannot do further partial evaluation; only after that, we check the second input argument f *)
@@ -179,7 +169,6 @@ let rec map t  = (* fun f -> *) (* remove this at the beginning and use it as la
       fun f ->  Node (mapl' f, f v, mapr' f)
 ;;
 
-(* with explicit type annotations *)
 let rec map (t : 'a bintree) : ('a -> 'b) -> 'b bintree =
   match t with
   | X -> fun _ -> X
