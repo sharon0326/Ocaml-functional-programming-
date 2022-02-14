@@ -1,0 +1,108 @@
+
+(* Have fun with LearnOCaml *)
+
+type 'a node = {
+  mutable prev : 'a node option;
+  data : 'a;
+  mutable next : 'a node option
+}
+;;
+
+type 'a double_ll = Empty | Dll of ('a node) * ('a node) ;;
+
+let create (x : 'a) : 'a node = {
+  prev = None;
+  data = x;
+  next = None
+}
+;;
+
+let empty () : 'a double_ll = Empty ;;
+
+let singleton (x: 'a) : 'a double_ll = 
+  let node = create x in 
+  Dll (node, node)
+;;
+
+let append (l: 'a double_ll) (x: 'a) : 'a double_ll = 
+  match l with 
+  | Empty -> singleton x
+  | Dll(head, last) -> 
+      let new_last = create x in 
+      new_last.prev <- Some last;
+      last.next <- Some new_last ;
+      Dll(head, new_last)
+;;
+
+let prepend (l: 'a double_ll) (x: 'a) : 'a double_ll = 
+  match l with 
+  | Empty -> singleton x
+  | Dll(head, last) -> 
+      let new_head = create x in 
+      new_head.next <- Some head;
+      head.prev <- Some new_head ;
+      Dll(new_head, last)
+;;
+
+let body (l : 'a double_ll) : 'a double_ll = 
+  match l with 
+  | Empty -> Empty
+  | Dll (head, last) -> 
+      match head.next with 
+      | None -> Empty
+      | Some n ->
+          if n == last then Empty
+          else 
+            let Some p = last.prev in 
+            n.prev <- None;
+            p.next <- None;
+            Dll(n, p)
+;;
+
+
+let l1 = singleton 1;;
+let l2 = append l1 2;;
+let l3 = append l2 3;;
+let l03 = prepend l3 0;;
+
+(* let l12 = body l4;; *)
+
+(* debugging utilities *)
+
+let print_node = function
+  | {prev = None; data = x; next = None} -> 
+      Printf.printf "(N, %d, N)\n" x
+  | {prev = Some p; data = x; next = None} -> 
+      Printf.printf "(%d, %d, N)\n" p.data x
+  | {prev = Some p; data = x; next = Some n} -> 
+      Printf.printf "(%d, %d, N)\n" p.data x
+  | {prev = None; data = x; next = Some n} -> 
+      Printf.printf "(N, %d, %d)\n" x n.data 
+;;
+
+let rec print_until_last cur = 
+  print_node cur; 
+  match cur.next with 
+  | None -> ()
+  | Some n -> print_until_last n
+;;
+
+let rec print_until_head cur = 
+  print_node cur; 
+  match cur.prev with 
+  | None -> ()
+  | Some p -> print_until_head p
+;;
+
+let print_dll (l : int double_ll) : unit = 
+  match l with 
+  | Empty -> Printf.printf "An empty double linked list"
+  | Dll(head, last) -> 
+      Printf.printf "head -> last\n";
+      print_until_last head ;
+      Printf.printf "\n";
+      Printf.printf "last -> head\n";
+      print_until_head last
+;;
+
+
