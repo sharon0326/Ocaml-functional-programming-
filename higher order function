@@ -1,0 +1,193 @@
+
+let add_v0 = function x -> function y ->  x + y ;;
+let add_v1 = function x -> function y -> (+) x y ;; 
+
+let add_v2 x y = (+) x y ;;
+
+let add_v2 x = (+) x ;; (*  *)
+
+let add_v2 = (+) ;; 
+
+
+let add100 = (+) 100;; 
+let add100 = function y -> 100 + y;;
+
+
+let ls = [1; 2; 3; 4];; 
+let ls2 = List.map add100 ls ;;
+
+let ls3 = List.map ((+) 100) ls ;; 
+
+let lt10 = function x -> x < 10 ;;
+
+let lt10 x = x < 10;;
+let lt10 = (>) 10 ;; (* function x -> x > 10  *)
+
+                     
+let ls4 = List.map (+) ls ;; (* [ (+) 1; (+) 2; (+) 3; (+) 4 ]  *)
+
+(*
+  List.map: ('a -> 'b) -> 'a list -> 'b list
+  
+  f: 'a -> 'b
+
+  (+) : int -> int -> int
+
+  (+) : int -> (int -> int)  
+
+ 'a = int
+ 'b = int->int
+*)
+
+List.filter (fun x -> x mod 2 = 0)  ls ;;
+let is_even = (fun x -> x mod 2 = 0);;
+
+List.filter is_even ls ;; 
+List.exists (fun x -> x > 2) ls ;;
+List.for_all (fun x -> x > 0) ls ;;
+
+(*
+  List.fold_left vs List.fold_right
+*)
+
+(*
+  List.fold_left (+) 0 [1; 2; 3; 4];; 
+  (f (f 0 1) 2)  3  4
+
+  f = (+)
+*)
+
+(* 
+  List.fold_right (+) [1; 2; 3; 4] 0 ;; 
+
+  1 2  (f 3  (f 4 0))
+*)
+
+(*
+  let my_add x y = y + x ;;
+*)
+
+List.fold_left (fun xs x -> x :: xs) [] ls ;;
+
+(*
+  List.fold_right (fun x init_ls -> x :: init_ls) [] ls ;;
+*)
+
+
+(* partial evaluation *)
+
+let f = fun x -> fun y -> x * x + y ;;
+
+let f10 = f 10 ;;
+
+(*
+   f10 = function y -> 10 * 10 + y ;; <-- answer
+   f10 = function y -> 100 + y ;;
+*)
+
+
+let my_square x = 
+  let _ = Printf.printf "will compute %d * %d" x x in 
+  x * x ;;
+
+let f = fun x -> fun y -> my_square x + y ;;
+
+let f10 = f 10 ;;
+
+let g = fun x -> 
+  let r = my_square x in 
+  fun y -> r + y ;;
+
+let g10 = g 10 ;;
+
+let g10 = 
+  let r = my_square 10 in 
+  fun y -> r + y ;;
+
+let g10 = fun y -> 100 + y ;;
+
+(* 
+  g10 = function y -> 100 + y ;;
+*)
+
+
+(* Question 1 *)
+
+(* Inner rec helper - may do something different *)
+
+let rec cross_map f l1 l2 = 
+  let rec map e = function
+    | [] -> []
+    | h :: t -> f h e :: map e t
+  in
+  match l2 with
+  | [] -> []
+  | h :: t -> 
+      (map h l1) @ cross_map f l1 t
+;;
+
+
+(*  with explicit type annotations *)
+let rec cross_map (f : 'a -> 'b -> 'c)  (l1 : 'a list) (l2 : 'b list)  : 'c list = 
+  let rec map e = function
+    | [] -> []
+    | h :: t -> f h e :: map e t
+  in
+  match l2 with
+  | [] -> []
+  | h :: t -> 
+      (map h l1) @ cross_map f l1 t
+;;
+
+
+
+(* List HOFs *)
+
+let cross_map' f l1 l2 =
+  List.fold_right (
+    fun e2 acc -> List.map (
+        fun e1 -> f e1 e2
+      ) l1 @ acc
+  ) l2 []
+;;
+
+
+let l1 = [1; 2; 3];;
+let l2 = [4; 5; 6];;
+
+cross_map (fun x y -> 100 * x + y) l1 l2 ;;
+
+
+(* Question 2 *)
+
+type 'a bintree = X | Node of 'a bintree * 'a * 'a bintree ;; 
+
+
+(* without leveraging partial evaluation *)
+let rec map t  = fun f ->
+  match t with 
+  | X -> X
+  | Node (l, v, r) -> Node (map l f, f v, map r f)
+;;
+
+(* leveraging partial evaluation by delaying the application of function f *)
+let rec map t  = (* fun f -> *) (* remove this at the beginning and use it as late as possible *)
+  match t with 
+  | X -> fun f -> X (*  we reach the base case and cannot do further partial evaluation; only after that, we check the second input argument f *)
+  | Node (l, v, r) -> 
+      let mapl' = map l in  (* this recursion call can happen without the need of knowing f *)
+      let mapr' = map r in  (* this recursion call can happen without the need of knowing f *)
+      fun f ->  Node (mapl' f, f v, mapr' f)
+;;
+
+(* with explicit type annotations *)
+let rec map (t : 'a bintree) : ('a -> 'b) -> 'b bintree =
+  match t with
+  | X -> fun _ -> X
+  | Node (l, el, r) -> 
+      let l' = map l in
+      let r' = map r in
+
+      fun f -> Node (l' f, f el, r' f)
+;;
+
