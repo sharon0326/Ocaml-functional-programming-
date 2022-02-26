@@ -1,0 +1,154 @@
+exception NotImplemented
+let domain () =
+    failwith "REMINDER: You should not be writing tests for undefined values."
+
+let rec tabulate f n =
+  let rec tab n acc =
+    if n < 0 then acc
+    else tab (n - 1) ((f n) :: acc)
+  in
+  tab (n - 1) []
+
+
+let rec unfold (f : 'seed -> 'a * 'seed) (stop : 'seed -> bool) (b : 'seed) : 'a list =
+  if stop b then
+    []
+  else
+    let (x, b') = f b in
+    x :: unfold f stop b'
+
+(** Example function using `unfold`.
+ * Generates a list of natural numbers less than `max`.
+ * *)
+let nats max = unfold (fun b -> (b, b+1)) (fun b -> max <= b) 0
+
+
+type price = float
+type weight = float
+type calories = int
+type ingredient = Nuts | Gluten | Soy | Dairy
+
+type cupcake = Cupcake of price * weight * calories * ingredient list
+
+let c1 = Cupcake (2.5, 80.3, 250, [Dairy; Nuts])
+let c2 = Cupcake (2.75, 90.5, 275, [Dairy; Soy])
+let c3 = Cupcake (3.05, 100.4, 303, [Dairy; Gluten; Nuts])
+let c4 = Cupcake (3.25, 120.4, 330, [Dairy; Gluten ])
+
+let cupcakes = [c1 ; c2 ; c3 ; c4]
+
+
+(* 1.1 Turn a string into a list of characters. *)
+let string_explode (s : string) : char list =
+  tabulate (String.get s) (String.length s);;
+
+(* 1.2 Turn a list of characters into a string. *)
+let string_implode (l : char list) : string =
+  let newlist = List.map Char.escaped l in
+  List.fold_left (^) "" newlist;; 
+                     
+(* 2.1 Compute the even natural numbers up to an exclusive limit. *)
+let evens (max : int) : int list =
+  let nats max = unfold (fun b -> (b, b+1)) (fun b -> max <= b) 0 in
+  List.filter (fun x -> x mod 2 =0) (nats max);;
+
+(* 2.2 Compute the fibonacci sequence up to an exclusive limit. *)
+let fib (max : int) : int list =
+
+  let thelist =  unfold (fun (a, b) -> (a, (b, a+b))) (fun (a, b) -> a > max) (1, 1)
+  in
+  List.filter(fun x -> x !=max) thelist;;
+
+(* 2.3 Compute Pascal's triangle up to a maximum row length. *)
+let pascal (max : int) : int list list = 
+  let next_row row =
+    List.map2 (+) (0 :: row) (row @ [0]) in 
+  let loop = unfold (fun (a, b) -> (a, (b, a+b))) (fun (a, b) -> a <= max) (1, 1)
+  in
+  let thelist = List.filter(fun x -> x !=max) loop in
+  let pascal n =
+    let rec loop i row =
+      if i = n then []
+      else row :: loop (i+1) (next_row row)
+    in loop 0 [1] in 
+  pascal max 
+;;
+
+(* 2.4 Implement zip, which converts two lists into a list of tuples.
+       e.g. zip [1; 2] ['a'; 'c'] = [(1, 'a'); (2, 'c')]
+       Note that if one list is shorter than the other, then the 
+       resulting list should have the length of the smaller list.     *)
+
+let zip (l1 : 'a list) (l2 : 'b list) : ('a * 'b) list = 
+  let length1 =  List.length l1 in
+  let length2 = List.length l2 in
+  let thelength =  if length1 >= length2 then length2
+    else length1 in
+  unfold (fun (a, b) -> ((List.nth l1 a, List.nth l2 b)),(a+1,b+1)) (fun (a, b) -> a+1 > thelength  || b+1 > thelength) (0, 0);;
+
+
+
+(*3. Return the cupcakes from the cupcake list that contain none of the 
+     allergens.        *)                                               
+
+let allergy_free (allergens : ingredient list) (cupcakes : cupcake list)
+  : cupcake list =
+  let checkall allergens cupcakes=
+    let rec check allergens bool =
+      if bool then true
+      else 
+        match  allergens with
+        | [] -> bool
+        | (h::t) -> check t (List.exists (fun x -> x = h) cupcakes )
+    in 
+    check allergens false 
+  in 
+  
+  let nestedlist cupcakes = 
+    let get_ingredient acup= 
+      let Cupcake (_,_,_,q) = acup in q
+    in 
+  
+    let rec newlist cupcakes acc = 
+      match cupcakes with
+      | []-> acc
+      | (h::t) -> newlist t ((get_ingredient h) :: acc) 
+    in 
+    newlist cupcakes [] 
+      
+  in    
+  
+  let reverse list=
+    let rec support acc = function
+      | [] -> acc
+      | hd :: tl -> support (hd :: acc) tl in
+    support [] list 
+  in 
+  
+  let reversednewlist =  reverse  (nestedlist cupcakes) in
+  let inlist = List.filter (fun x -> not (checkall allergens x)) (reversednewlist)
+  in 
+  let listfor = List.for_all (checkall allergens) inlist in 
+  
+  let get_ingredient acup= 
+    match acup with
+    | Cupcake (_,_,_,q) -> q 
+    |  Cupcake (_,_,b,_)->[]
+  in 
+  
+  let abool = listfor in
+  
+  let final2 ingrelist finalele =
+    let rec finalcheck ingrelist finalele bool = 
+      if bool then true
+      else 
+        match ingrelist with 
+        | [] -> false
+        | x :: xs -> 
+            if  x = get_ingredient finalele then true
+            else finalcheck xs finalele bool 
+    in
+    finalcheck ingrelist finalele false  
+  in
+
+  List.filter (final2 inlist) cupcakes;;
